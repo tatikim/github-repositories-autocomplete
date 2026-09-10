@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Моя страница</title>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        padding: 30px;
+        background: white;
+      }
+
+      .container {
+        width: 466px;
+        min-height: 600px;
+        margin: 0 auto;
+        padding: 30px;
+        background: #c6c6c6;
+      }
+
+      input {
+        width: 100%;
+        height: 57px;
+        padding: 5px 14px;
+        font-size: 40px;
+        border: 1px solid #999;
+      }
+
+      #autocomplete {
+        width: 100%;
+      }
+
+      #autocomplete div {
+        height: 41px;
+        padding: 4px 14px;
+        background: #ddd;
+        border: 2px solid #111;
+        font-size: 28px;
+        cursor: pointer;
+      }
+
+      #autocomplete div:hover {
+        background: #61c7ed;
+      }
+
+      #repositories {
+        margin-top: 41px;
+      }
+
+      #repositories > div {
+        position: relative;
+        min-height: 94px;
+        margin-bottom: 0;
+        padding: 7px 60px 7px 14px;
+        background: #d96be3;
+        border: 1px solid #111;
+        font-size: 23px;
+        line-height: 27px;
+      }
+
+      #repositories a {
+        display: block;
+        color: black;
+        text-decoration: none;
+      }
+
+      #repositories a:hover {
+        text-decoration: underline;
+      }
+
+      #repositories button {
+        position: absolute;
+        top: 22px;
+        right: 27px;
+        width: 35px;
+        height: 35px;
+        padding: 0;
+        border: none;
+        background: transparent;
+        cursor: pointer;
+
+        font-size: 0;
+      }
+
+      #repositories button::before,
+      #repositories button::after {
+        content: "";
+        position: absolute;
+        top: 16px;
+        left: -2px;
+        width: 50px;
+        height: 4px;
+        background: red;
+      }
+
+      #repositories button::before {
+        transform: rotate(45deg);
+      }
+
+      #repositories button::after {
+        transform: rotate(-45deg);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <input type="text" />
+
+      <div id="autocomplete"></div>
+
+      <div id="repositories"></div>
+    </div>
+    <script>
+      const input = document.querySelector("input");
+
+      const autocomplete = document.querySelector("#autocomplete");
+      const repositories = document.querySelector("#repositories");
+      let timer;
+      input.addEventListener("input", function () {
+        if (!input.value.trim()) {
+          autocomplete.textContent = "";
+        } else {
+          clearTimeout(timer);
+
+          timer = setTimeout(() => {
+            getData(input.value);
+            console.log(input.value);
+          }, 300);
+        }
+      });
+
+      async function getData(query) {
+        try {
+          const url = `https://api.github.com/search/repositories?q=${query}`;
+          const response = await fetch(url);
+          const data = await response.json();
+          if (response.ok) {
+            const firstFive = data.items.slice(0, 5);
+            autocomplete.textContent = "";
+
+            firstFive.forEach((repository) => {
+              const repoElement = document.createElement("div");
+
+              repoElement.textContent = repository.name;
+              autocomplete.appendChild(repoElement);
+
+              repoElement.addEventListener("click", () => {
+                const element = document.createElement("div");
+
+                const link = document.createElement("a");
+                link.href = repository.html_url;
+                link.textContent = `Name: ${repository.name}`;
+
+                const owner = document.createElement("div");
+                owner.textContent = `Owner: ${repository.owner.login}`;
+
+                const stars = document.createElement("div");
+                stars.textContent = `Stars: ${repository.stargazers_count}`;
+
+                const button = document.createElement("button");
+                button.textContent = "Удалить";
+
+                element.append(link);
+                element.append(owner);
+                element.append(stars);
+                element.append(button);
+
+                repositories.append(element);
+                button.addEventListener("click", () => {
+                  element.remove();
+                });
+
+                input.value = "";
+                autocomplete.textContent = "";
+              });
+            });
+          } else {
+            throw new Error("Ошибка при получении данных");
+          }
+        } catch (error) {
+          console.error("Ошибка:", error);
+        }
+      }
+    </script>
+  </body>
+</html>
